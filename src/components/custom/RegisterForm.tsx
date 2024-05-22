@@ -11,7 +11,8 @@ import {
     CardFooter,
     CardHeader,
     CardTitle,
-} from "@/components/ui/card";
+}
+    from "@/components/ui/card";
 import {
     Form,
     FormControl,
@@ -20,38 +21,102 @@ import {
     FormItem,
     FormLabel,
     FormMessage,
-} from "@/components/ui/form";
+}
+    from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Icons } from "@/assets/icons";
 import { PasswordInput } from "@/components/custom/PasswordInput";
-import { Checkbox } from "@/components/ui/checkbox";
-import { InfoCircledIcon } from "@radix-ui/react-icons";
-import { Controller, useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { RegisterFormSchema } from "@/lib/zod/schemas/schema";
 import { RegisterFormSchemaTypes } from "../../lib/types/types";
+import { useState } from 'react';
+import axios, { AxiosError } from 'axios';
+import { toast } from 'react-toastify';
+import { useRouter } from 'next/navigation';
 
-interface RegisterFormProps extends React.HTMLAttributes<HTMLDivElement> {}
+
+interface RegisterFormProps extends React.HTMLAttributes<HTMLDivElement> { }
 
 export function RegisterForm({ className, ...props }: RegisterFormProps) {
     const form = useForm<RegisterFormSchemaTypes>({
         resolver: zodResolver(RegisterFormSchema),
         mode: "onChange",
-        defaultValues: {
-            newsletter: false,
-        },
     });
+    
+    const [registrationSuccess, setRegistrationSuccess] = useState(false);
+    const router = useRouter();
 
     const onSubmit = async (data: RegisterFormSchemaTypes) => {
-        console.log(data);
 
-        form.reset({
-            email: "",
-            password: "",
-            confirmPassword: "",
-            newsletter: false,
-        });
+        try {
+            const response = await axios.post('https://run.mocky.io/v3/66c3a16b-34b2-4d2b-9819-cc6c52bac79b', ///api/v1/register  https://perfectly-funny-kid.ngrok-free.app/api/v1/register
+                JSON.stringify({
+                    Email: data.Email,
+                    Password: data.Password,
+                    ConfirmPassword: data.ConfirmPassword
+                }),
+                {
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    withCredentials: true,
+                }
+            );
+
+            if (response.status == 201 && response.data.Registered) {
+                toast.success("Registration Successful!.", { theme: "colored" });
+                console.log('Registration successful');
+                setRegistrationSuccess(true);
+
+                setTimeout(() => {
+                    router.push('/dashboard');   
+                }, 1000)
+
+            }
+        } catch (error: any) {
+            handleErrors(error.response);
+        }
+
+        if (registrationSuccess) {
+            form.reset({
+                Email: "",
+                Password: "",
+                ConfirmPassword: "",
+            });
+        }
+        console.log(data);
     };
+
+    const handleErrors = (response: any) => {
+        const errorMessages: { [key: number]: string } = {
+            401: 'Unauthorized: Please register or provide valid credentials.',
+            403: "Forbidden: You don't have permission to access this resource.",
+            404: 'Not Found: The requested resource could not be found. Try again.',
+            500: 'Internal Server Error: Something went wrong on the server. Try again later.',
+            503: 'Service Unavailable: The server is currently unavailable. Please try again later.',
+        };
+
+        
+        if (response !== undefined) {
+            if (response.status == 422 && response.data && response.data.FieldErrors) {
+                if (response.data.FieldErrors.Password) {
+                    toast.error(response.data.FieldErrors.Password, { theme: 'colored' });
+                }
+                if (response.data.FieldErrors.Email) {
+                    toast.error(response.data.FieldErrors.Email, { theme: 'colored' });
+                }
+            } else {
+                const message = errorMessages[response.status] || 'Registration Failed! Try again.';
+                toast.error(message, { theme: 'colored' });   
+            }
+        } 
+        else {
+            console.error('Unexpected error: Response data does not contain FieldErrors property', response);
+            toast.error('Unexpected error, try again later', { theme: 'colored' });
+        }
+        };
+
 
     return (
         <Card className="mx-auto max-w-sm outline-none shadow-none border-none mt-[60px]">
@@ -65,9 +130,10 @@ export function RegisterForm({ className, ...props }: RegisterFormProps) {
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="mb-4">
                         <div className="grid gap-4">
+
                             <FormField
                                 control={form.control}
-                                name="email"
+                                name="Email"
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Email</FormLabel>
@@ -80,19 +146,13 @@ export function RegisterForm({ className, ...props }: RegisterFormProps) {
                                                 {...field}
                                             />
                                         </FormControl>
-                                        <FormMessage className="flex gap-[5px] items-center text-[10px]">
-                                            <InfoCircledIcon className="h-[10px] w-[10px] text-foreground" />
-                                            <span className="text-[10px] text-foreground">
-                                                enter the email address you used to login / register
-                                            </span>
-                                        </FormMessage>
                                     </FormItem>
                                 )}
                             />
 
                             <FormField
                                 control={form.control}
-                                name="password"
+                                name="Password"
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Password</FormLabel>
@@ -100,12 +160,12 @@ export function RegisterForm({ className, ...props }: RegisterFormProps) {
                                             <PasswordInput
                                                 id="password"
                                                 type="password"
-                                                placeholder="password"
+                                                placeholder="Create Password"
                                                 disabled={form.formState.isSubmitting}
                                                 {...field}
                                                 onChange={(e) => {
                                                     field.onChange(e); // Update the password field
-                                                    form.trigger("confirmPassword"); // Manually trigger validation of the confirmPassword field
+                                                    form.trigger("ConfirmPassword"); // Manually trigger validation of the confirmPassword field
                                                 }}
                                             />
                                         </FormControl>
@@ -116,43 +176,20 @@ export function RegisterForm({ className, ...props }: RegisterFormProps) {
 
                             <FormField
                                 control={form.control}
-                                name="confirmPassword"
+                                name="ConfirmPassword"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Password</FormLabel>
+                                        <FormLabel>Confirm password</FormLabel>
                                         <FormControl>
                                             <PasswordInput
                                                 id="confirmPassword"
                                                 type="password"
-                                                placeholder="password"
+                                                placeholder="Confirm Password"
                                                 disabled={form.formState.isSubmitting}
                                                 {...field}
                                             />
                                         </FormControl>
                                         <FormMessage className="text-[10px]" />
-                                    </FormItem>
-                                )}
-                            />
-
-                            <FormField
-                                control={form.control}
-                                name="newsletter"
-                                render={({ field }) => (
-                                    <FormItem className="flex flex-row items-start justify-center space-x-2 space-y-0">
-                                        <FormControl>
-                                            <Checkbox
-                                                id="newsletter"
-                                                className="h-[15px] w-[15px] flex items-center justify-center"
-                                                disabled={form.formState.isSubmitting}
-                                                checked={field.value}
-                                                onCheckedChange={field.onChange}
-                                            />
-                                        </FormControl>
-                                        <div className="space-y-1 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                                            <FormLabel>
-                                                Send me emails with tips, news, and offers.
-                                            </FormLabel>
-                                        </div>
                                     </FormItem>
                                 )}
                             />
@@ -196,6 +233,7 @@ export function RegisterForm({ className, ...props }: RegisterFormProps) {
                     Register with Google
                 </Button>
             </CardContent>
+
             <CardFooter>
                 <p className="text-center text-sm text-muted-foreground">
                     By clicking continue, you agree to our{" "}
@@ -212,6 +250,7 @@ export function RegisterForm({ className, ...props }: RegisterFormProps) {
                     .
                 </p>
             </CardFooter>
+
         </Card>
     );
 }

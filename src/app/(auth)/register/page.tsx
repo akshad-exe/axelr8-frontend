@@ -3,6 +3,8 @@ import { cn } from "@/lib/utils";
 
 import { buttonVariants } from "@/components/ui/button";
 import { RegisterForm } from "@/components/custom/RegisterForm";
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 export default function RegisterPage() {
     return (
@@ -18,6 +20,7 @@ export default function RegisterPage() {
                     Login
                 </Link>
                 <RegisterForm />
+                <ToastContainer/>
             </div>
         </>
     );

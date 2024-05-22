@@ -21,13 +21,13 @@ export const LoginFormSchema = z.object({
 
 export const RegisterFormSchema = z
     .object({
-        email: z
+        Email: z
             .string()
             .email()
             .refine((value) => value.includes("@") && value.includes("."), {
                 message: "Enter a valid email",
             }),
-        password: z
+        Password: z
             .string()
             .min(8, "Min. 8 characters")
             .refine((value) => /[a-z]/.test(value), {
@@ -42,10 +42,10 @@ export const RegisterFormSchema = z
             .refine((value) => /\W|_/.test(value), {
                 message: "Password need a  special character",
             }),
-        confirmPassword: z.string().min(1, "Password is required"),
-        newsletter: z.boolean().default(false).optional(),
+        ConfirmPassword: z.string().min(8, "Password is required"),
+        
     })
-    .refine((data) => data.password === data.confirmPassword, {
+    .refine((data) => data.Password === data.ConfirmPassword, {
         message: "Passwords do not match",
-        path: ["confirmPassword"],
+        path: ["ConfirmPassword"],
     });
